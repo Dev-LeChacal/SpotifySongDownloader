@@ -33,7 +33,8 @@ class SpotifyDownloaderApp(ctk.CTk):
         'text_primary': '#FFFFFF',
         'text_secondary': '#B3B3B3',
         'accent': '#535353',
-        'border': '#2a2a2a'
+        'border': '#2a2a2a',
+        'error': '#F44336',
     }
 
     PADDING_X = 20
@@ -249,18 +250,22 @@ class SpotifyDownloaderApp(ctk.CTk):
         self.history_list = ctk.CTkScrollableFrame(self.history_frame,
                                                    fg_color=self.COLORS['background'],
                                                    corner_radius=8)
-        self.history_list.grid(row=1, column=0, sticky="nsew", padx=self.PADDING_X, pady=(0, 15))
+        self.history_list.grid(row=1, column=0, sticky="nsew", padx=self.PADDING_X, pady=(0, 10))
 
-        self.back_button = ctk.CTkButton(self.history_frame,
+        button_frame = ctk.CTkFrame(self.history_frame, fg_color="transparent")
+        button_frame.grid(row=2, column=0, sticky="ew", padx=self.PADDING_X, pady=(0, self.PADDING_Y))
+        button_frame.grid_columnconfigure(0, weight=1)
+
+        self.back_button = ctk.CTkButton(button_frame,
                                          text="← Back to Download",
                                          command=self.hide_history,
-                                         width=150,
+                                         width=180,
                                          height=self.BTN_HEIGHT,
                                          fg_color=self.COLORS['primary'],
                                          hover_color=self.COLORS['primary_hover'],
                                          font=ctk.CTkFont(size=14, weight="bold"),
                                          corner_radius=8)
-        self.back_button.grid(row=2, column=0, pady=(0, self.PADDING_Y))
+        self.back_button.grid(row=0, column=0)
 
         self.history_frame.grid_remove()
 
@@ -385,59 +390,64 @@ class SpotifyDownloaderApp(ctk.CTk):
                                     border_color=self.COLORS['border'])
                 card.pack(fill="x", pady=(0, 12), padx=10)
 
+                main_frame = ctk.CTkFrame(card, fg_color="transparent")
+                main_frame.pack(fill="x", padx=15, pady=15)
+                main_frame.grid_columnconfigure(1, weight=1)
+
+                track_icon = ctk.CTkLabel(main_frame, text="🎵", font=ctk.CTkFont(size=16))
+                track_icon.grid(row=0, column=0, sticky="nw", padx=(0, 10))
+
+                info_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+                info_frame.grid(row=0, column=1, sticky="ew")
+                info_frame.grid_columnconfigure(0, weight=1)
+
                 title = entry.get("title", "Unknown Title")
                 artist = entry.get("artist", "Unknown Artist")
                 url = entry.get("url", "")
                 file_path = entry.get("file", "")
 
-                header_frame = ctk.CTkFrame(card, fg_color="transparent")
-                header_frame.pack(fill="x", padx=15, pady=(15, 5))
-                header_frame.grid_columnconfigure(1, weight=1)
-
-                track_icon = ctk.CTkLabel(header_frame, text="🎵", font=ctk.CTkFont(size=16))
-                track_icon.grid(row=0, column=0, sticky="w")
-
                 header_text = f"{artist} - {title}"
-                if len(header_text) > 50:
-                    header_text = header_text[:47] + "..."
+                if len(header_text) > 60:
+                    header_text = header_text[:57] + "..."
 
-                header = ctk.CTkLabel(header_frame,
+                header = ctk.CTkLabel(info_frame,
                                       text=header_text,
-                                      font=ctk.CTkFont(size=16, weight="bold"),
+                                      font=ctk.CTkFont(size=14, weight="bold"),
                                       text_color=self.COLORS['text_primary'],
                                       anchor="w")
-                header.grid(row=0, column=1, sticky="w", padx=(10, 0))
+                header.grid(row=0, column=0, sticky="w", pady=(0, 5))
 
                 if url:
-                    url_frame = ctk.CTkFrame(card, fg_color="transparent")
-                    url_frame.pack(fill="x", padx=15, pady=(0, 5))
-
-                    display_url = url[:50] + "..." if len(url) > 50 else url
-                    url_label = ctk.CTkLabel(url_frame,
+                    display_url = url[:60] + "..." if len(url) > 60 else url
+                    url_label = ctk.CTkLabel(info_frame,
                                              text=f"🔗 {display_url}",
-                                             font=ctk.CTkFont(size=12),
+                                             font=ctk.CTkFont(size=11),
                                              text_color=self.COLORS['primary'],
                                              anchor="w",
                                              cursor="hand2")
                     url_label.bind("<Button-1>", lambda e, link=url: self.open_url(link))
-                    url_label.pack(anchor="w")
+                    url_label.grid(row=1, column=0, sticky="w", pady=(0, 3))
 
                 if file_path and os.path.exists(file_path):
-                    file_frame = ctk.CTkFrame(card, fg_color="transparent")
-                    file_frame.pack(fill="x", padx=15, pady=(0, 15))
-
                     file_name = Path(file_path).name
-                    if len(file_name) > 50:
-                        file_name = file_name[:47] + "..."
+                    if len(file_name) > 60:
+                        file_name = file_name[:57] + "..."
 
-                    file_label = ctk.CTkLabel(file_frame,
+                    file_label = ctk.CTkLabel(info_frame,
                                               text=f"📁 {file_name}",
-                                              font=ctk.CTkFont(size=12),
+                                              font=ctk.CTkFont(size=11),
                                               text_color=self.COLORS['text_secondary'],
                                               anchor="w",
                                               cursor="hand2")
                     file_label.bind("<Button-1>", lambda e, path=file_path: self.open_file_location(path))
-                    file_label.pack(anchor="w")
+                    file_label.grid(row=2, column=0, sticky="w")
+                else:
+                    file_label = ctk.CTkLabel(info_frame,
+                                              text="File not found",
+                                              font=ctk.CTkFont(size=11),
+                                              text_color=self.COLORS['error'],
+                                              anchor="w")
+                    file_label.grid(row=2, column=0, sticky="w")
 
         self.download_frame.grid_remove()
         self.history_frame.grid()
